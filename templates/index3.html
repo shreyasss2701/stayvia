@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Buy Me a Chai - Razorpay Demo</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+        font-family: cursive;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        background-color: #f1f5f8;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+      .card {
+        background-color: white;
+        padding: 25px;
+        border: 1px solid #bbbbbb;
+        border-radius: 5px;
+        box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.25);
+        max-width: 400px;
+        text-align: center;
+      }
+      .title {
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+      }
+      .muted {
+        color: #8e7f7f;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+      }
+      .btn {
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 10px 20px;
+        background-color: #ffaaa7;
+        color: white;
+        font-size: 1.2em;
+        font-weight: 600;
+        letter-spacing: 1px;
+        border: none;
+        transition: background-color 0.3s ease;
+      }
+      .btn:hover {
+        background-color: #ff7f7a;
+      }
+
+      /* Payment message popup */
+      #payment-message {
+        display: none;
+        position: fixed;
+        top: 30%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border: 1px solid #ccc;
+        padding: 20px 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        max-width: 90%;
+        width: 320px;
+        border-radius: 6px;
+      }
+      #payment-message p {
+        margin-bottom: 20px;
+        font-size: 1.1em;
+      }
+      #payment-message button {
+        cursor: pointer;
+        padding: 6px 12px;
+        border: none;
+        background-color: #ffaaa7;
+        color: white;
+        border-radius: 4px;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+      }
+      #payment-message button:hover {
+        background-color: #ff7f7a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1 class="title">Buy Me a Chai</h1>
+      <small class="muted">If you like my work, you can support me by donating ₹200</small>
+      <button class="btn" id="pay-btn">Donate ₹200</button>
+    </div>
+
+    <!-- Payment message popup -->
+    <div id="payment-message">
+      <p id="msg-text"></p>
+      <button id="close-msg-btn">Close</button>
+    </div>
+
+    <!-- Razorpay Checkout script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+      // Setup Razorpay options from Django context variables
+      var options = {
+        key: "{{ razorpay_merchant_key }}",
+        amount: "{{ razorpay_amount }}", // amount in paise
+        currency: "{{ currency }}",
+        name: "Dj Razorpay",
+        order_id: "{{ razorpay_order_id }}",
+        handler: function (response) {
+          // Send payment details to backend for verification and capture
+          fetch("/paymenthandler/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              // Show the payment message popup with response message
+              const messageDiv = document.getElementById("payment-message");
+              const msgText = document.getElementById("msg-text");
+              msgText.textContent = data.message || "Payment status unknown.";
+              messageDiv.style.display = "block";
+            })
+            .catch((err) => {
+              alert("Payment succeeded but something went wrong!");
+              console.error(err);
+            });
+        },
+        modal: {
+          ondismiss: function () {
+            // User closed the payment popup without completing payment
+            const messageDiv = document.getElementById("payment-message");
+            const msgText = document.getElementById("msg-text");
+            msgText.textContent = "Payment popup closed without completing payment.";
+            messageDiv.style.display = "block";
+          },
+        },
+        theme: {
+          color: "#ffaaa7",
+        },
+      };
+
+      var rzp1 = new Razorpay(options);
+
+      // Open Razorpay popup on button click
+      document.getElementById("pay-btn").onclick = function (e) {
+        rzp1.open();
+        e.preventDefault();
+      };
+
+      // Close button for payment message popup
+      document.getElementById("close-msg-btn").onclick = function () {
+        document.getElementById("payment-message").style.display = "none";
+      };
+    </script>
+  </body>
+</html>

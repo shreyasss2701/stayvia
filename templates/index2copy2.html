@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pay Now</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <h1>Make a Payment</h1>
+  <button id="rzp-button">Pay ₹5</button>
+
+  <script>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    document.getElementById('rzp-button').onclick = function (e) {
+      fetch("/account/order/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({})
+      })
+      .then(res => res.json())
+      .then(order => {
+        const options = {
+          "key": "{{ key_id }}",
+          "amount": order.amount,
+          "currency": "INR",
+          "name": "Stayvia Hotels",
+          "description": "Hotel Booking",
+          "order_id": order.order_id,
+          "handler": function (response) {
+            // Send the response to backend to verify signature
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/account/verify_signature/";
+
+            const data = {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              csrfmiddlewaretoken: csrfToken
+            };
+
+            for (const key in data) {
+              const input = document.createElement("input");
+              input.type = "hidden";
+              input.name = key;
+              input.value = data[key];
+              form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to create order.");
+      });
+    };
+  </script>
+</body>
+</html>

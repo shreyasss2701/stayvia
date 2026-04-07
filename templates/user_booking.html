@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block start %}
+
+
+{% comment %} <div style="display: flex; align-items: center; gap: 20px;">
+  <!-- Left side: Image -->
+  <div style="flex: 1;">
+    <img src="https://t4.ftcdn.net/jpg/04/70/29/97/360_F_470299797_UD0eoVMMSUbHCcNJCdv2t8B2g1GVqYgs.jpg" alt="Example Image" style="width: 100%; max-width: 100%;">
+  </div>
+
+  <!-- Right side: Content -->
+  <div style="flex: 1;">
+    <h2>Title or Heading</h2>
+    <p>
+      This is some content next to the image. You can place text, links, buttons, or anything else here.
+    </p>
+
+  </div>
+</div> {% endcomment %}
+
+{% for rec in booking_list %}
+<div class="container mt-3 pt-3 pb-3" >
+
+    <div class="col-10 mx-auto card shadow p-4" style="border:none">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="flex: 1;">
+                {% if rec.hotel.hotel_images.first %}
+                    <a href="{% url 'hotel_details' rec.hotel_slug %}">
+                    <img src="/media/{{rec.hotel.hotel_images.first.image}}" class="card-img-top" alt="...">
+                    </a>
+                {% else %}
+                <img src="https://t4.ftcdn.net/jpg/04/70/29/97/360_F_470299797_UD0eoVMMSUbHCcNJCdv2t8B2g1GVqYgs.jpg" class="card-img-top" alt="..." >
+                {% endif %}
+            </div>
+            <div style="flex: 1;">
+                <h4>{{rec.hotel_name}}</h4>
+                <p>{{rec.hotel_location}}</p>
+                <p>{{rec.hotel_description| safe}}</p>
+                <hr>
+                <p>Start Date    : {{rec.booking_start_date}}<br>
+                End Date      : {{rec.booking_end_date}}<br>
+                Check In Time : {{rec.booking_checkin_time}}<br>
+                Check Out Time: {{rec.booking_checkout_time}}</p>
+                <hr>
+                Price         : Rs. {{rec.booking_price}}
+                <hr>
+                {{ rec.booking_status }}
+                <hr>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+	var editor = new FroalaEditor('#flora');		
+</script>
+{% comment %} <div class="container mt-5 pt-5 pb-5">
+  {% comment %} <div class="col-6 mx-auto"> 
+
+    <div class="row">
+        {% for rec in booking_list %}
+        <div class="col-md-1 mt-1">
+            
+            <div class="card shadow" style="width: 18rem;">
+                <a href="{% url 'hotel_details' rec.hotel_slug %}">
+                {% if hotel.hotel_images.first %}
+                    <img src="/media/{{hotel.hotel_images.first.image}}" class="card-img-top" alt="...">
+                {% else %}
+                    <img src="https://t4.ftcdn.net/jpg/04/70/29/97/360_F_470299797_UD0eoVMMSUbHCcNJCdv2t8B2g1GVqYgs.jpg" class="card-img-top" alt="...">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{rec.hotel_name}}</h5>
+                    Price <span class="badge text-bg-danger">{{rec.hotel_price}}</span>
+                    Offer Price <span class="badge text-bg-success">{{hotel.hotel_offer_price}}</span>
+                    <hr>
+                    <p>{{rec.hotel_location}}</p>
+                    {% comment %} <span class="badge text-bg-primary">Swimming Pool</span>
+                    <span class="badge text-bg-primary">AC</span> 
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+ 
+</div> {% endcomment %}
+
+{% endblock %}

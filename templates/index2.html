@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcmeCorp - Make a Purchase</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+    <h1>Make a Payment</h1>
+    <button id="rzp-button">Pay ₹5</button>
+
+    <script>
+        document.getElementById('rzp-button').onclick = function (e) {
+            // Step 1: Create an order by contacting Django backend
+            fetch('/account/order/', { method: 'POST' })
+                .then(response => response.json())
+                .then(order => {
+                    // Step 2: Configure Razorpay options
+                    const options = {
+                        "key": "{{ key_id }}", // Injected by Django template
+                        "amount": order.amount,
+                        "currency": "INR",
+                        "name": "AcmeCorp",
+                        "description": "Payment for order " + order.order_id,
+                        "order_id": order.order_id,
+                        "handler": function (response) {
+                            // Step 3: Send data to Django backend for signature verification
+                            fetch("/account/verify_signature/", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                },
+                                body: new URLSearchParams({
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature
+                                }),
+                            })
+                            .then(res => {
+                                if (res.ok) {
+                                    window.location.href = "/account/success/";
+                                } else {
+                                    alert("Payment verification failed.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Verification Error:", error);
+                                alert("Server error during verification.");
+                            });
+                        },
+                        "theme": {
+                            "color": "#3399cc"
+                        }
+                    };
+
+                    // Step 4: Open Razorpay Checkout
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                })
+                .catch(error => {
+                    console.error("Order creation failed:", error);
+                    alert("Error creating payment order.");
+                });
+        };
+    </script>
+</body>
+</html>
